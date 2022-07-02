@@ -53,6 +53,7 @@ class Group(models.Model):
     def __str__(self):
         return self.title
 
+
 class Comment(CreatedModel):
     post = models.ForeignKey(
         Post,
@@ -77,6 +78,7 @@ class Comment(CreatedModel):
         verbose_name = 'Комментарий'
         verbose_name_plural = 'Комментарии'
 
+
 class Follow(CreatedModel):
     user = models.ForeignKey(
         User,
@@ -85,7 +87,7 @@ class Follow(CreatedModel):
         verbose_name='Подписчик',
     )
     author = models.ForeignKey(
-       User,
+        User,
         on_delete=models.CASCADE,
         verbose_name='Автор',
         related_name='following',

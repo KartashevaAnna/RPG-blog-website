@@ -288,32 +288,6 @@ class ExtraCheckForPostCreation(TestCase):
         self.assertNotIn('Дополнительное тестирование', my_test_object,
                          'Post is in the wrong group')
 
-    def test_cashe(self):
-        'Тестируем работу кеша'
-        cache.clear()
-        content_before_post = self.authorized_client.get(
-            reverse('posts:posts_index')).content
-        cache.clear()
-        my_new_post = Post.objects.create(
-            text='Тестирую кеш',
-            author=self.user,
-            group=self.another_group,
-        )
-        content_with_post = self.authorized_client.get(
-            reverse('posts:posts_index')).content
-        my_new_post.delete()
-        content_with_cashed_post = self.authorized_client.get(
-            reverse('posts:posts_index')).content
-        cache.clear()
-        content_post_deleted_cash_cleared = self.authorized_client.get(
-            reverse('posts:posts_index')).content
-        self.assertEqual(content_before_post,
-                         content_post_deleted_cash_cleared)
-        self.assertEqual(content_with_post, content_with_cashed_post)
-        self.assertNotEqual(content_with_post,
-                            content_post_deleted_cash_cleared)
-        self.assertNotEqual(content_before_post, content_with_post)
-
 
 class CasheTestView(TestCase):
     @classmethod
