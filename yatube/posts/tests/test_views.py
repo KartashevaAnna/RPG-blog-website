@@ -341,6 +341,7 @@ class FollowingTestView(TestCase):
             author=cls.another_user,
             group=cls.group,
         )
+
     def setUp(self) -> None:
         cache.clear()
         self.authorized_client = Client()
