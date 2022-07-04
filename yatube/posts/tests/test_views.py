@@ -378,7 +378,7 @@ class FollowingTestView(TestCase):
     def test_add_following_count(self):
         """Проверяем, что подписка возникает в базе данных."""
         count_before_new = Follow.objects.count()
-        add_following_response = self.authorized_client.post(
+        self.authorized_client.post(
             reverse(
                 'posts:profile_follow', kwargs={'username': self.another_user}
             )
@@ -389,7 +389,7 @@ class FollowingTestView(TestCase):
     def remove_following_count(self):
         """Проверяем, что подписка удаляется из базы данных."""
         count_before_delete = Follow.objects.count()
-        remove_following_response = self.authorized_client.post(
+        self.authorized_client.post(
             reverse(
                 'posts:profile_unfollow',
                 kwargs={'username': self.another_user}
@@ -401,7 +401,7 @@ class FollowingTestView(TestCase):
 
     def test_profile_follow(self):
         """Проверяем, что пост возникает на странице подписки."""
-        add_following_response = self.authorized_client.post(
+        self.authorized_client.post(
             reverse(
                 'posts:profile_follow', kwargs={'username': self.another_user}
             )
@@ -420,14 +420,13 @@ class FollowingTestView(TestCase):
                 self.post_by_user, follow_page_response.context['page_obj']
             )
 
-
     def test_profile_unfollow(self):
         """Проверяем, что пост удалется со страницы подписки."""
         Follow.objects.create(
             user=self.user,
             author=self.post_by_author.author,
         )
-        remove_following_response = self.authorized_client.post(
+        self.authorized_client.post(
             reverse(
                 'posts:profile_unfollow',
                 kwargs={'username': self.another_user}
