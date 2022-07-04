@@ -384,7 +384,7 @@ class FollowingTestView(TestCase):
             )
         )
         count_with_new = Follow.objects.count()
-        self.assertEqual(count_before_new +1, count_with_new)
+        self.assertEqual(count_before_new + 1, count_with_new)
 
     def remove_following_count(self):
         """Проверяем, что подписка удаляется из базы данных."""
@@ -397,7 +397,6 @@ class FollowingTestView(TestCase):
         )
         count_after_delete = Follow.objects.count()
         self.assertEqual(count_before_delete - 1, count_after_delete)
-
 
     def test_profile_follow(self):
         """Проверяем, что пост возникает на странице подписки."""
