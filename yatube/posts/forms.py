@@ -14,6 +14,7 @@ class PostForm(forms.ModelForm):
         labels = {
             'text': 'Текст поста',
             'group': 'Группа, к которой будет относиться пост',
+            'image': 'Изображение',
         }
 
 

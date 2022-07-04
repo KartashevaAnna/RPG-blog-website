@@ -42,13 +42,25 @@ class UrlsMatchTemplatesTests(TestCase):
         """URL-адрес использует соответствующий шаблон."""
         templates_url_names = (
             (reverse('posts:posts_index'), 'posts/index.html'),
-            (reverse('posts:profile', kwargs={'username': self.post.author}),
-             'posts/profile.html'),
-            (reverse('posts:post_detail', kwargs={'post_id': self.post.pk}),
-             'posts/post_detail.html'),
+            (
+                reverse(
+                    'posts:profile', kwargs={'username': self.post.author}
+                ),
+                'posts/profile.html'
+            ),
+            (
+                reverse(
+                    'posts:post_detail', kwargs={'post_id': self.post.pk}
+                ),
+                'posts/post_detail.html'
+            ),
             (reverse('posts:post_create'), 'posts/create_post.html'),
-            (reverse('posts:post_edit', kwargs={'post_id': self.post.pk}),
-             'posts/create_post.html'),
+            (
+                reverse(
+                    'posts:post_edit', kwargs={'post_id': self.post.pk}
+                ),
+                'posts/create_post.html'
+            ),
         )
         for reverse_name, template, in templates_url_names:
             with self.subTest(reverse_name=reverse_name):
@@ -105,10 +117,9 @@ class PostsContextViewsTest(TestCase):
         my_test_object = response.context['page_obj'][0]
         self.assertIn('page_obj', response.context)
         self.assertEqual(my_test_object.text, 'Первый тестовый пост')
-        self.assertEqual(my_test_object.group,
-                         self.post.group)
+        self.assertEqual(my_test_object.group, self.post.group)
         self.assertEqual(my_test_object.author, self.user)
-        self.assertEqual(my_test_object.image.name[6:], self.uploaded.name)
+        self.assertIn(self.uploaded.name, my_test_object.image.name)
 
     def test_group_list_shows_correct_context(self):
         """Шаблон group_list сформирован с правильным контекстом."""
@@ -120,7 +131,7 @@ class PostsContextViewsTest(TestCase):
         self.assertEqual(my_test_object.text, 'Первый тестовый пост')
         self.assertEqual(my_test_object.group, self.post.group)
         self.assertEqual(my_test_object.author, self.user)
-        self.assertEqual(my_test_object.image.name[6:], self.uploaded.name)
+        self.assertIn(self.uploaded.name, my_test_object.image.name)
 
     def test_profile_shows_correct_context(self):
         """Шаблон profile сформирован с правильным контекстом."""
@@ -129,23 +140,21 @@ class PostsContextViewsTest(TestCase):
         my_test_object = response.context['page_obj'][0]
         self.assertIn('page_obj', response.context)
         self.assertEqual(my_test_object.text, 'Первый тестовый пост')
-        self.assertEqual(my_test_object.group,
-                         self.post.group)
+        self.assertEqual(my_test_object.group, self.post.group)
         self.assertEqual(my_test_object.author, self.user)
-        self.assertNotIn(self.another_user,
-                         response.context['page_obj'])
-        self.assertEqual(my_test_object.image.name[6:], self.uploaded.name)
+        self.assertNotIn(self.another_user, response.context['page_obj'])
+        self.assertIn(self.uploaded.name, my_test_object.image.name)
 
     def test_post_detail_shows_correct_context(self):
         """Шаблон post_detail сформирован с правильным контекстом."""
         response = self.authorized_client.get(
-            reverse('posts:post_detail',
-                    kwargs={'post_id': self.post.pk}))
+            reverse('posts:post_detail', kwargs={'post_id': self.post.pk})
+        )
         my_test_object = response.context['post']
         self.assertEqual(my_test_object.text, 'Первый тестовый пост')
         self.assertEqual(my_test_object.group, self.post.group)
         self.assertEqual(my_test_object.author, self.user)
-        self.assertEqual(my_test_object.image.name[6:], self.uploaded.name)
+        self.assertIn(self.uploaded.name, my_test_object.image.name)
 
     def correct_form_fields(self, response):
         """Поля формы PostForm работают корректно."""
@@ -165,8 +174,8 @@ class PostsContextViewsTest(TestCase):
     def test_post_edit_shows_correct_context(self):
         """Шаблон post_edit сформирован с правильным контекстом."""
         response = self.authorized_client.get(
-            reverse('posts:post_edit',
-                    kwargs={'post_id': self.post.pk}))
+            reverse('posts:post_edit', kwargs={'post_id': self.post.pk})
+        )
         self.correct_form_fields(response)
         self.assertEqual(response.context['post_id'], self.post.pk)
 
@@ -224,7 +233,7 @@ class PaginationViewsTest(TestCase):
             )
 
 
-class ExtraCheckForPostCreation(TestCase):
+class CreatedPostDoesntFallInWrongGroup(TestCase):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
@@ -259,21 +268,19 @@ class ExtraCheckForPostCreation(TestCase):
         )
         my_urls = (
             reverse('posts:posts_index'),
-            reverse('posts:group_list',
-                    kwargs={'slug': self.another_group.slug}),
+            reverse(
+                'posts:group_list', kwargs={'slug': self.another_group.slug}
+            ),
             reverse('posts:profile', kwargs={'username': self.user.username})
         )
         for reverse_name in my_urls:
             with self.subTest(reverse_name=reverse_name):
-                response = self.authorized_client.get(
-                    reverse_name)
+                response = self.authorized_client.get(reverse_name)
                 my_test_object = response.context['page_obj'][0]
                 self.assertEqual(my_test_object.text,
                                  'Дополнительное тестирование')
-                self.assertEqual(my_test_object.group,
-                                 self.another_group)
-                self.assertEqual(my_test_object.author,
-                                 self.user)
+                self.assertEqual(my_test_object.group, self.another_group)
+                self.assertEqual(my_test_object.author, self.user)
 
     def test_my_post_is_not_in_a_wrong_group(self):
         """Пост не попадает не в ту группу."""
@@ -285,8 +292,11 @@ class ExtraCheckForPostCreation(TestCase):
         response = self.authorized_client.get(
             reverse('posts:group_list', kwargs={'slug': self.group.slug}))
         my_test_object = response.context['page_obj']
-        self.assertNotIn('Дополнительное тестирование', my_test_object,
-                         'Post is in the wrong group')
+        self.assertNotIn(
+            'Дополнительное тестирование',
+            my_test_object,
+            'Post is in the wrong group'
+        )
 
 
 class CasheTestView(TestCase):
@@ -305,24 +315,35 @@ class CasheTestView(TestCase):
         self.authorized_client = Client()
         self.authorized_client.force_login(self.user)
 
-    def test_cashe(self):
-        '''Тестируем работу кеша.'''
+    def post_created_with_first_cashe(self):
         my_new_post = Post.objects.create(
             text='Тестирую кеш',
             author=self.user,
             group=self.group,
         )
         content_with_post = self.authorized_client.get(
-            reverse('posts:posts_index')).content
+            reverse('posts:posts_index')
+        ).content
         my_new_post.delete()
+        return my_new_post, content_with_post
+
+    def test_post_is_cached(self):
+        """Тестируем работу кеша."""
+        my_new_post, content_with_post = self.post_created_with_first_cashe()
         content_with_cashed_post = self.authorized_client.get(
-            reverse('posts:posts_index')).content
+            reverse('posts:posts_index')
+        ).content
+        self.assertEqual(content_with_post, content_with_cashed_post)
+
+    def test_post_deleted_cache_cleared(self):
+        my_new_post, content_with_post = self.post_created_with_first_cashe()
         cache.clear()
         content_post_deleted_cash_cleared = self.authorized_client.get(
-            reverse('posts:posts_index')).content
-        self.assertEqual(content_with_post, content_with_cashed_post)
-        self.assertNotEqual(content_with_post,
-                            content_post_deleted_cash_cleared)
+            reverse('posts:posts_index')
+        ).content
+        self.assertNotEqual(
+            content_with_post, content_post_deleted_cash_cleared
+        )
 
 
 class FollowingTestView(TestCase):
@@ -336,10 +357,15 @@ class FollowingTestView(TestCase):
             slug='test_slug',
             description='Тестовое описание'
         )
-        cls.my_new_post = Post.objects.create(
+        cls.post_by_author = Post.objects.create(
             text='Подписка',
             author=cls.another_user,
             group=cls.group,
+        )
+        cls.post_by_user = Post.objects.create(
+            text='Hello, World!',
+            author=cls.user,
+            group=cls.group
         )
 
     def setUp(self) -> None:
@@ -349,71 +375,65 @@ class FollowingTestView(TestCase):
         self.author = Client()
         self.author.force_login(self.another_user)
 
-    def test_following_add_to_database(self):
-        '''Проверяем, что подписка возникает в базе данных.'''
-        before_following_created = Follow.objects.all().count()
-        Follow.objects.create(
-            user=self.user,
-            author=self.my_new_post.author,
+    def test_add_following_count(self):
+        """Проверяем, что подписка возникает в базе данных."""
+        count_before_new = Follow.objects.count()
+        add_following_response = self.authorized_client.post(
+            reverse(
+                'posts:profile_follow', kwargs={'username': self.another_user}
+            )
         )
-        after_following_created = Follow.objects.all().count()
-        self.assertEqual(after_following_created, before_following_created + 1)
+        count_with_new = Follow.objects.count()
+        self.assertEqual(count_before_new +1, count_with_new)
 
-    def test_following_delete_from_database(self):
-        ''''Проверяем, что подписку можно удалить из базы данных.'''
-        Follow.objects.create(
-            user=self.user,
-            author=self.my_new_post.author,
+    def remove_following_count(self):
+        """Проверяем, что подписка удаляется из базы данных."""
+        count_before_delete = Follow.objects.count()
+        remove_following_response = self.authorized_client.post(
+            reverse(
+                'posts:profile_unfollow',
+                kwargs={'username': self.another_user}
+            )
         )
-        following_before_delete = Follow.objects.all().count()
-        Follow.objects.all().delete()
-        following_after_delete = Follow.objects.all().count()
-        self.assertEqual(following_after_delete + 1, following_before_delete)
+        count_after_delete = Follow.objects.count()
+        self.assertEqual(count_before_delete - 1, count_after_delete)
 
-    def test_authorized_user_can_follow(self):
-        '''Проверяем, что авторизованный пользователь может подписаться на
-        автора.'''
 
-        add_following_response = self.authorized_client.get(
-            reverse('posts:profile_follow', kwargs={'username': self.user})
+    def test_profile_follow(self):
+        """Проверяем, что пост возникает на странице подписки."""
+        add_following_response = self.authorized_client.post(
+            reverse(
+                'posts:profile_follow', kwargs={'username': self.another_user}
+            )
         )
-        self.assertEqual(add_following_response.status_code, HTTPStatus.FOUND)
-
-    def data_for_follow_tests(self):
-        post_by_author = Post.objects.create(
-            text='Подписка',
-            author=self.another_user,
-            group=self.group,
-        )
-        following = Follow.objects.create(
-            user=self.user,
-            author=self.my_new_post.author,
-        )
-        post_by_user = Post.objects.create(
-            text='Hello, World!',
-            author=self.user,
-            group=self.group
-        )
-        return post_by_author, following, post_by_user
-
-    def test_follow_index_user_gets_correct_posts(self):
-        '''Проверяем, что посты автора, на которого подписан пользователь,
-        появляются у него в ленте подписки, а чужие посты не появляются.'''
-        post_by_author, following, post_by_user = self.data_for_follow_tests()
-        follow_index_response = self.authorized_client.get(
+        follow_page_response = self.authorized_client.get(
             reverse('posts:follow_index')
         )
-        with self.subTest(post_by_author=post_by_author):
-            self.assertEqual(follow_index_response.status_code, HTTPStatus.OK)
-            self.assertContains(follow_index_response, post_by_author)
-            self.assertNotContains(follow_index_response, post_by_user)
+        returned_post = follow_page_response.context['page_obj'][0]
+        with self.subTest(returned_post=returned_post):
+            self.assertEqual(self.post_by_author.text, returned_post.text)
+            self.assertEqual(self.post_by_author.author, returned_post.author)
+            self.assertEqual(self.post_by_author.group, returned_post.group)
+            self.assertEqual(self.post_by_author.pk, returned_post.pk)
+            self.assertEqual(follow_page_response.status_code, HTTPStatus.OK)
+            self.assertNotIn(
+                self.post_by_user, follow_page_response.context['page_obj']
+            )
+
 
     def test_profile_unfollow(self):
-        '''Проверяем, что пользователь может отписаться от автора.'''
-        post_by_author, following, post_by_user = self.data_for_follow_tests()
-        Follow.objects.all().delete()
+        """Проверяем, что пост удалется со страницы подписки."""
+        Follow.objects.create(
+            user=self.user,
+            author=self.post_by_author.author,
+        )
+        remove_following_response = self.authorized_client.post(
+            reverse(
+                'posts:profile_unfollow',
+                kwargs={'username': self.another_user}
+            )
+        )
         follow_index_response = self.authorized_client.get(
             reverse('posts:follow_index'))
-        with self.subTest(post_by_author=post_by_author):
-            self.assertEqual(follow_index_response.status_code, HTTPStatus.OK)
-            self.assertNotContains(follow_index_response, post_by_author)
+        self.assertEqual(follow_index_response.status_code, HTTPStatus.OK)
+        self.assertNotContains(follow_index_response, self.post_by_author)

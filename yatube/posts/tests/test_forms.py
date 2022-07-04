@@ -76,7 +76,7 @@ class PostFormTests(TestCase):
         self.assertEqual(Post.objects.count(), posts_count + 1)
         self.assertEqual(my_post.text, form_data['text'])
         self.assertEqual(my_post.group.id, form_data['group'])
-        self.assertEqual(my_post.image.name[6:], form_data['image'].name)
+        self.assertIn(form_data['image'].name, my_post.image.name)
 
     def test_edit_post(self):
         posts_count = Post.objects.count()
@@ -88,8 +88,9 @@ class PostFormTests(TestCase):
             'text': 'Новый текст',
             'group': self.another_group.id,
         }
-        self.verify_change(form_data, posts_count)
-        self.verify_change(new_form_data, posts_count)
+        with self.subTest(posts_count=posts_count):
+            self.verify_change(form_data, posts_count)
+            self.verify_change(new_form_data, posts_count)
 
     def verify_change(self, form_data, posts_count):
         self.authorized_client.post(
@@ -97,7 +98,7 @@ class PostFormTests(TestCase):
             data=form_data,
             follow=True
         )
-        post = Post.objects.get(id=1)
+        post = Post.objects.get(id=self.post.id)
         self.assertEqual(Post.objects.count(), posts_count)
         self.assertEqual(form_data['text'], post.text)
         self.assertEqual(form_data['group'], post.group.id)
@@ -148,14 +149,16 @@ class CommentFormTest(TestCase):
         return added
 
     def test_add_comment_by_authorized_user(self):
-        comments_count = self.post.comments.all().count()
-        adding = self.adding_comment(self.authorized_client,
-                                     self.first_comment)
+        comments_count = self.post.comments.count()
+        adding = self.adding_comment(
+            self.authorized_client,
+            self.first_comment
+        )
         my_page = self.get_post_detail(self.authorized_client)
         expected = self.post.comments.filter(
             text=self.first_comment['text']).exists()
         my_comment = Comment.objects.latest('-created')
-        new_comments_count = self.post.comments.all().count()
+        new_comments_count = self.post.comments.count()
         with self.subTest(new_comment=self.first_comment):
             self.assertEqual(adding.status_code, HTTPStatus.FOUND)
             self.assertEqual(
@@ -167,13 +170,14 @@ class CommentFormTest(TestCase):
             self.assertIn(my_comment, my_page.context['comments'])
 
     def test_no_comment_by_guest_client(self):
-        comments_count = self.post.comments.all().count()
+        comments_count = self.post.comments.count()
         adding = self.adding_comment(self.guest_client, self.another_comment)
         self.get_post_detail(self.guest_client)
         expected = self.post.comments.filter(
-            text=self.another_comment['text']).exists()
-        new_comments_count = self.post.comments.all().count()
+            text=self.another_comment['text']
+        ).exists()
+        new_comments_count = self.post.comments.count()
         with self.subTest(another_comment=self.another_comment):
-            self.assertFalse(expected, 'Comment is added when it shan\'t')
+            self.assertFalse(expected, "Comment is added when it shan't")
             self.assertEqual(comments_count, new_comments_count)
             self.assertEqual(adding.status_code, HTTPStatus.FOUND)
