@@ -152,7 +152,7 @@ class CommentFormTest(TestCase):
         comments_count = self.post.comments.count()
         adding = self.adding_comment(
             self.authorized_client,
-            self.first_comment
+            self.first_comment,
         )
         my_page = self.get_post_detail(self.authorized_client)
         expected = self.post.comments.filter(
@@ -173,11 +173,15 @@ class CommentFormTest(TestCase):
         comments_count = self.post.comments.count()
         adding = self.adding_comment(self.guest_client, self.another_comment)
         self.get_post_detail(self.guest_client)
-        expected = self.post.comments.filter(
+        expected_existance = self.post.comments.filter(
             text=self.another_comment['text']
         ).exists()
         new_comments_count = self.post.comments.count()
-        with self.subTest(another_comment=self.another_comment):
-            self.assertFalse(expected, "Comment is added when it shan't")
-            self.assertEqual(comments_count, new_comments_count)
-            self.assertEqual(adding.status_code, HTTPStatus.FOUND)
+        expected_and_result = (
+            (expected_existance, False),
+            (comments_count, new_comments_count),
+            (adding.status_code, HTTPStatus.FOUND),
+        )
+        for expected, result in expected_and_result:
+            with self.subTest(another_comment=self.another_comment):
+                self.assertEqual(expected, result)

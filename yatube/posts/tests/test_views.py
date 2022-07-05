@@ -277,8 +277,10 @@ class CreatedPostDoesntFallInWrongGroup(TestCase):
             with self.subTest(reverse_name=reverse_name):
                 response = self.authorized_client.get(reverse_name)
                 my_test_object = response.context['page_obj'][0]
-                self.assertEqual(my_test_object.text,
-                                 'Дополнительное тестирование')
+                self.assertEqual(
+                    my_test_object.text,
+                    'Дополнительное тестирование'
+                )
                 self.assertEqual(my_test_object.group, self.another_group)
                 self.assertEqual(my_test_object.author, self.user)
 
@@ -290,7 +292,11 @@ class CreatedPostDoesntFallInWrongGroup(TestCase):
             group=self.another_group,
         )
         response = self.authorized_client.get(
-            reverse('posts:group_list', kwargs={'slug': self.group.slug}))
+            reverse(
+                'posts:group_list',
+                kwargs={'slug': self.group.slug}
+            )
+        )
         my_test_object = response.context['page_obj']
         self.assertNotIn(
             'Дополнительное тестирование',
@@ -375,8 +381,8 @@ class FollowingTestView(TestCase):
         self.author = Client()
         self.author.force_login(self.another_user)
 
-    def test_add_following_count(self):
-        """Проверяем, что подписка возникает в базе данных."""
+    def test_profile_follow(self):
+        """Проверяем, что пост возникает на странице подписки."""
         count_before_new = Follow.objects.count()
         self.authorized_client.post(
             reverse(
@@ -384,10 +390,37 @@ class FollowingTestView(TestCase):
             )
         )
         count_with_new = Follow.objects.count()
-        self.assertEqual(count_before_new + 1, count_with_new)
+        follow_page_response = self.authorized_client.get(
+            reverse('posts:follow_index')
+        )
+        returned_post = follow_page_response.context['page_obj'][0]
+        expected_and_result = (
+            (self.post_by_author.text, returned_post.text),
+            (self.post_by_author.author, returned_post.author),
+            (self.post_by_author.group, returned_post.group),
+            (self.post_by_author.pk, returned_post.pk),
+            (follow_page_response.status_code, HTTPStatus.OK),
+            (count_before_new + 1, count_with_new),
+            (
+                self.assertNotIn(
+                    self.post_by_user,
+                    follow_page_response.context['page_obj']
+                ),
+                None
+            )
 
-    def remove_following_count(self):
+        )
+        for expected, result in expected_and_result:
+            with self.subTest(returned_post=returned_post):
+                self.assertEqual(expected, result)
+
+    def test_profile_unfollow(self):
         """Проверяем, что подписка удаляется из базы данных."""
+        self.authorized_client.post(
+            reverse(
+                'posts:profile_follow', kwargs={'username': self.another_user}
+            )
+        )
         count_before_delete = Follow.objects.count()
         self.authorized_client.post(
             reverse(
@@ -395,43 +428,25 @@ class FollowingTestView(TestCase):
                 kwargs={'username': self.another_user}
             )
         )
+        cache.clear()
         count_after_delete = Follow.objects.count()
-        self.assertEqual(count_before_delete - 1, count_after_delete)
-
-    def test_profile_follow(self):
-        """Проверяем, что пост возникает на странице подписки."""
-        self.authorized_client.post(
-            reverse(
-                'posts:profile_follow', kwargs={'username': self.another_user}
-            )
-        )
         follow_page_response = self.authorized_client.get(
             reverse('posts:follow_index')
         )
-        returned_post = follow_page_response.context['page_obj'][0]
-        with self.subTest(returned_post=returned_post):
-            self.assertEqual(self.post_by_author.text, returned_post.text)
-            self.assertEqual(self.post_by_author.author, returned_post.author)
-            self.assertEqual(self.post_by_author.group, returned_post.group)
-            self.assertEqual(self.post_by_author.pk, returned_post.pk)
-            self.assertEqual(follow_page_response.status_code, HTTPStatus.OK)
-            self.assertNotIn(
-                self.post_by_user, follow_page_response.context['page_obj']
-            )
-
-    def test_profile_unfollow(self):
-        """Проверяем, что пост удалется со страницы подписки."""
-        Follow.objects.create(
-            user=self.user,
-            author=self.post_by_author.author,
-        )
-        self.authorized_client.post(
-            reverse(
-                'posts:profile_unfollow',
-                kwargs={'username': self.another_user}
+        post_list_count = Post.objects.filter(
+            author__following__user=self.user
+        ).count()
+        content_follow_page = (
+            (post_list_count, 0),
+            (follow_page_response.status_code, HTTPStatus.OK),
+            (count_before_delete - 1, count_after_delete),
+            (
+                self.assertNotContains(
+                    follow_page_response, self.post_by_author
+                ),
+                None
             )
         )
-        follow_index_response = self.authorized_client.get(
-            reverse('posts:follow_index'))
-        self.assertEqual(follow_index_response.status_code, HTTPStatus.OK)
-        self.assertNotContains(follow_index_response, self.post_by_author)
+        for expected, result in content_follow_page:
+            with self.subTest(follow_page_response=follow_page_response):
+                self.assertEqual(expected, result)
