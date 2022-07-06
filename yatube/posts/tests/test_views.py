@@ -391,34 +391,42 @@ class FollowingTestView(TestCase):
     def test_profile_follow(self):
         Follow.objects.all().delete()
         """Проверяем, что пост возникает на странице подписки."""
-        post_list_before = self.get_posts_by_followed_author()
+        post_list_before = list(self.get_posts_by_followed_author())
+        post_list_before_count = self.get_posts_by_followed_author().count()
         self.authorized_client.post(
             reverse(
-                'posts:profile_follow', kwargs={'username': self.another_user.username}
+                'posts:profile_follow',
+                kwargs={'username': self.another_user.username}
             )
         )
-        post_list_after = self.get_posts_by_followed_author()
+        post_list_after = list(self.get_posts_by_followed_author())
+        post_list_after_count = self.get_posts_by_followed_author().count()
         with self.subTest():
             self.assertEqual(
-                post_list_before.count() + 1,
-                post_list_after.count()
+                post_list_before_count + 1,
+                post_list_after_count
             )
             self.assertNotIn(self.post_by_author, post_list_before)
             self.assertIn(self.post_by_author, post_list_after)
             self.assertNotIn(self.post_by_user, post_list_after)
 
-    # def test_profile_unfollow(self):
-    #     """Проверяем, что подписка удаляется из базы данных."""
-    #     Follow.objects.create(
-    #         user=self.user,
-    #         author=self.another_user,
-    #     )
-    #     post_list_before = self.get_posts_by_followed_author()
-    #     self.authorized_client.post(
-    #         reverse(
-    #             'posts:profile_unfollow',
-    #             kwargs={'username': self.another_user.username}
-    #         )
-    #     )
-    #     post_list_after = self.get_posts_by_followed_author()
-    #     self.assertEqual(post_list_before.count(), post_list_after.count() + 1)
+    def test_profile_unfollow(self):
+        """Проверяем, что подписка удаляется из базы данных."""
+        Follow.objects.create(
+            user=self.user,
+            author=self.another_user,
+        )
+        post_list_before = list(self.get_posts_by_followed_author())
+        post_list_before_count = self.get_posts_by_followed_author().count()
+        self.authorized_client.post(
+            reverse(
+                'posts:profile_unfollow',
+                kwargs={'username': self.another_user.username}
+            )
+        )
+        post_list_after = list(self.get_posts_by_followed_author())
+        post_list_after_count = self.get_posts_by_followed_author().count()
+        with self.subTest():
+            self.assertEqual(post_list_before_count, post_list_after_count + 1)
+            self.assertIn(self.post_by_author, post_list_before)
+            self.assertNotIn(self.post_by_author, post_list_after)
