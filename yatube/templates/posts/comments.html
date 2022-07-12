@@ -3,10 +3,20 @@
 <head>
   <meta charset="UTF-8">
 </head>
+{% load static %}
+<style>
+ .form-control {background: #24292e; color: #F2ECFA}
+.form-control:focus{background-color:#24292e; color: #F2ECFA}
+</style>
+ <link rel="stylesheet" href="{% static 'css/dark.css' %}">
 {% block content %}
 {% load user_filters %}
 {% if user.is_authenticated %}
-  <div class="card my-4">
+{% for comment in comments %}
+Всего комментариев: {{ comments.count }} <br>
+{% endfor %}
+
+  <div class="card my-4" style="background: #0B0B0C; color:white">
     <h5 class="card-header">Добавить комментарий:</h5>
     <div class="card-body">
       <form method="post" action="{% url 'posts:add_comment' post.id %}">

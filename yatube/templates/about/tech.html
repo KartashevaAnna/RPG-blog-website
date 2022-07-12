@@ -1,20 +1,31 @@
-{% extends "base.html" %}
+{% extends 'base.html' %}
 {% block title %}Технологии{% endblock %}
 {% block content %}
+{% load static %}
+ <link rel="stylesheet" href="{% static 'css/dark.css' %}">
 <div class="row">
-  <h1>Вот что я умею</h1>
-  <aside class="col-12 col-md-3">
-    <ul class="list-group list-group-flush">
-      <li class="list-group-item" style="color:#8B008B">
-        Python
+  <h1 style="color:#978EF7;">Доработки после сдачи проекта</h1>
+  <aside class="col-12 col-lg">
+    <ul class="list-group list-group-flush" style="color:#C7C1FE;">
+      <li class="list-group-item" style="color:#C7C1FE; background: #24292e;">
+        <b>✓ </b>Изменен цвет навигационных ссылок в полосе навигации
       </li>
-      <li class="list-group-item" style="color:#9400D3">
-        Django
+      <li class="list-group-item" style="color:#C7C1FE; background: #24292e;">
+        <b>✓ </b> Изменен цвет полосы навигации
+      </li>
+      <li class="list-group-item" style="color:#C7C1FE; background: #24292e;">
+        <b>✓ </b>Тема изменена на темную
+      </li>
+      <li class="list-group-item" style="color:#C7C1FE; background: #24292e;">
+       <b>✓ </b>Подсчитываю количество уникальных посетителей
+      </li>
+      <li class="list-group-item" style="color:#C7C1FE; background: #24292e;">
+      <b>✓ </b>Подсчитываю количество подписок у пользователя
+      </li>
+      <li class="list-group-item" style="color:#C7C1FE; background: #24292e;">
+      <b>✓ </b>Подсчитываю количество подписчиков для автора
       </li>
     </ul>
   </aside>
-  <article class="col-12 col-md-9">
-    <p>Текст страницы «Технологии»</p>
-  </article>
 </div>
 {% endblock %}

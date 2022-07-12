@@ -400,16 +400,25 @@ class FollowingTestView(TestCase):
         )
         post_list_after = list(self.get_posts_by_followed_author())
         post_list_after_count = self.get_posts_by_followed_author().count()
-        with self.subTest():
+
+        my_subscription = Follow.objects.filter(
+            user=self.user, author=self.another_user
+        )
+        my_subscription_exists = my_subscription.exists()
+        with self.subTest(my_subscription=my_subscription):
             self.assertEqual(
+
                 post_list_before_count + 1,
+
                 post_list_after_count
+
             )
+            self.assertTrue(my_subscription_exists, 'Subscription not created')
             self.assertNotIn(self.post_by_author, post_list_before)
             self.assertIn(self.post_by_author, post_list_after)
             self.assertNotIn(self.post_by_user, post_list_after)
 
-    def test_profile_unfollow(self):
+def test_profile_unfollow(self):
         """Проверяем, что подписка удаляется из базы данных."""
         Follow.objects.create(
             user=self.user,

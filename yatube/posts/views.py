@@ -2,9 +2,10 @@ from django.contrib.auth.decorators import login_required
 from django.core.paginator import Paginator
 from django.shortcuts import render, get_object_or_404, redirect
 from django.views.decorators.cache import cache_page
+from django.db.models import Q
 
 from .forms import PostForm, CommentForm
-from .models import Post, Group, User, Follow
+from .models import Post, Group, User, Follow, Visitor
 
 
 def get_pagination(request, post_list):
@@ -14,12 +15,29 @@ def get_pagination(request, post_list):
     return page_obj
 
 
-@cache_page(20, key_prefix='index_page')
+# @cache_page(20, key_prefix='index_page')
 def index(request):
     post_list = Post.objects.all()
     page_obj = get_pagination(request, post_list)
+
+    def get_ip(request):
+        address = request.META.get('HTTP_X_FORWARDED_FOR')
+        if address:
+            ip = address.split(',')[-1].strip()
+        else:
+            ip = request.META.get('REMOTE_ADDR')
+        return ip
+    ip = get_ip(request)
+    user_ip = Visitor(user=ip)
+    result = Visitor.objects.filter(Q(user__icontains=ip))
+    if len(result) >= 1:
+        pass
+    else:
+        user_ip.save()
+    visitors_count = Visitor.objects.all().count()
     context = {
         'page_obj': page_obj,
+        'visitors_count': visitors_count,
     }
     return render(request, 'posts/index.html', context)
 
@@ -41,10 +59,12 @@ def profile(request, username):
     page_obj = get_pagination(request, post_list)
     if request.user.is_authenticated:
         following = Follow.objects.filter(user=request.user, author=author)
+        followers = Follow.objects.filter(author=author).count
         context = {
             'author': author,
             'page_obj': page_obj,
             'following': following,
+            'followers': followers,
         }
         return render(request, 'posts/profile.html', context)
     context = {
@@ -115,11 +135,13 @@ def follow_index(request):
     username = request.user.username
     author = get_object_or_404(User, username=username)
     post_list = Post.objects.filter(author__following__user=request.user)
+    following_count = Follow.objects.filter(author__following__user=request.user).count()
     page_obj = get_pagination(request, post_list)
     context = {
         'author': author,
         'username': request.user.username,
         'page_obj': page_obj,
+        'following_count': following_count,
     }
     return render(request, 'posts/follow.html', context)
 

@@ -7,11 +7,13 @@
 {% endif %}
 {% endblock %}
 {% block content %}
+{% load static %}
 
+<link rel="stylesheet" href="{% static 'css/dark.css' %}">
 <div class="container py-5">
   <div class="row justify-content-center">
     <div class="col-md-8 p-5">
-      <div class="card">
+      <div class="card card_dark">
         <div class="card-header">{% if form.instance.pk %}Редактировать пост{%
           else %}Новая запись{% endif %}
         </div>
@@ -37,9 +39,14 @@
 
                   <label for="{{ field.id_for_label }}">{{ field.label }}
                     {% if field.field.required %}
-                      <span class="required text-danger">*</span>
+                      <span
+                          class="required text-danger">*</span>
                     {% endif %}
                   </label>
+                  <style>
+                     .form-control {background: #24292e; color: #F2ECFA}
+                     .form-control:focus{background-color:#24292e; color: #F2ECFA}
+                  </style>
                   {{ field|addclass:'form-control' }}
                   {% if field.help_text %}
                     <small id="{{ field.id_for_label }}-help"

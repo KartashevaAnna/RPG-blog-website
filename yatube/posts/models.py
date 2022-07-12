@@ -98,3 +98,18 @@ class Follow(CreatedModel):
         verbose_name = 'Подписка',
         verbose_name_plural = 'Подписки',
         unique_together = ('user', 'author',)
+
+class Visitor(models.Model):
+    user = models.TextField(default=None)
+
+    def __str__(self):
+        return self.user
+
+
+class Setting(models.Model):
+    user = models.OneToOneField(Visitor, on_delete=models.CASCADE)
+    name = models.CharField(max_length=200)
+    value = models.CharField(max_length=200)
+
+    def __str__(self):
+        return self.name
