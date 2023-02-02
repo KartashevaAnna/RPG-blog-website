@@ -1,9 +1,11 @@
 import os
+from dotenv import load_dotenv
+
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+load_dotenv()
 
-SECRET_KEY = 'rv(!n(&m=3q#(*(u$4i4ht**&k7!t$*6axw10ltp(418-_!jl3'
-
+SECRET_KEY = os.getenv('SECRET_KEY')
 DEBUG = True
 
 ALLOWED_HOSTS = [
